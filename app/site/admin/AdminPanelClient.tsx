@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-/* ===== TYPES ===== */
 interface UserWithStatus {
   id: string;
   name: string | null;
@@ -14,7 +13,6 @@ interface UserWithStatus {
   createdAt: string;
 }
 
-/* ===== MODAL ===== */
 function ConfirmModal({ open, title, message, onConfirm, onClose }: any) {
   if (!open) return null;
 
@@ -38,7 +36,6 @@ function ConfirmModal({ open, title, message, onConfirm, onClose }: any) {
   );
 }
 
-/* ===== BUTTON ===== */
 function AdminButton({ label, color, onClick }: any) {
   const colors: any = {
     green: "bg-green-600 hover:bg-green-700",
@@ -58,19 +55,27 @@ function AdminButton({ label, color, onClick }: any) {
   );
 }
 
-/* ===== CARD ===== */
 function AdminUserCard({ user, refresh }: any) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState("");
 
   async function handleAction(action: string) {
-    await fetch(`/api/admin/users/${user.id}`, {
+    const res = await fetch(`/api/admin/users/${user.id}`, {
       method: "POST",
+      credentials: "include", // 🔥 KLUCZOWE
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
 
-    refresh();
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error(data);
+      alert(data.error || "Error");
+      return;
+    }
+
+    await refresh();
   }
 
   const color =
@@ -133,7 +138,6 @@ function AdminUserCard({ user, refresh }: any) {
   );
 }
 
-/* ===== SECTION ===== */
 function AdminSection({ title, users, refresh }: any) {
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-6">
@@ -148,26 +152,30 @@ function AdminSection({ title, users, refresh }: any) {
   );
 }
 
-/* ===== MAIN ===== */
 export default function AdminPanelClient({ users }: any) {
-  const [data, setData] = useState(users);
+  const [data, setData] = useState<UserWithStatus[]>(users);
 
   const refresh = async () => {
-    const res = await fetch("/api/admin/users");
+    const res = await fetch("/api/admin/users", {
+      credentials: "include",
+    });
+
     const newData = await res.json();
     setData(newData);
   };
 
-  const pending = data.filter((u: any) => !u.isApproved);
-  const active = data.filter((u: any) => u.isApproved && u.status === "active");
-  const banned = data.filter((u: any) => u.status === "banned");
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const pending = data.filter((u) => !u.isApproved);
+  const active = data.filter((u) => u.isApproved && u.status === "active");
+  const banned = data.filter((u) => u.status === "banned");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white p-10">
+    <div className="min-h-screen bg-black text-white p-10">
       <header className="flex justify-between mb-10">
-        <div>
-          <h1 className="text-3xl font-bold">🛡️ Panel Administratora</h1>
-        </div>
+        <h1 className="text-3xl font-bold">🛡️ Panel Administratora</h1>
 
         <Link href="/site/homepage" className="px-5 py-2 bg-gray-700 rounded-lg">
           Powrót

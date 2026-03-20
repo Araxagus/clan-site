@@ -3,18 +3,30 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: Request, { params }: any) {
+export async function POST(req: Request, context: any) {
   const session = await getServerSession(authOptions);
 
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Brak dostępu" }, { status: 403 });
   }
 
-  const { id } = params;
+  // ✅ WAŻNE: await params
+  const { params } = context;
+  const { id } = await params;
+
   const { action } = await req.json();
 
-  const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!id) {
+    return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
 
   try {
     switch (action) {
@@ -35,8 +47,8 @@ export async function POST(req: Request, { params }: any) {
           data: {
             role:
               user.role === "USER"
-                ? "MODERATOR"
-                : user.role === "MODERATOR"
+                ? "MOD"
+                : user.role === "MOD"
                 ? "ADMIN"
                 : "ADMIN",
           },
@@ -49,8 +61,8 @@ export async function POST(req: Request, { params }: any) {
           data: {
             role:
               user.role === "ADMIN"
-                ? "MODERATOR"
-                : user.role === "MODERATOR"
+                ? "MOD"
+                : user.role === "MOD"
                 ? "USER"
                 : "USER",
           },
@@ -64,13 +76,6 @@ export async function POST(req: Request, { params }: any) {
         });
         break;
 
-      case "unban":
-        await prisma.user.update({
-          where: { id },
-          data: { status: "active" },
-        });
-        break;
-
       case "delete":
         await prisma.user.delete({ where: { id } });
         break;
@@ -81,6 +86,7 @@ export async function POST(req: Request, { params }: any) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
