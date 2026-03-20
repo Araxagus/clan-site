@@ -35,8 +35,8 @@ export async function POST(req: Request, { params }: any) {
           data: {
             role:
               user.role === "USER"
-                ? "MOD"
-                : user.role === "MOD"
+                ? "MODERATOR"
+                : user.role === "MODERATOR"
                 ? "ADMIN"
                 : "ADMIN",
           },
@@ -49,8 +49,8 @@ export async function POST(req: Request, { params }: any) {
           data: {
             role:
               user.role === "ADMIN"
-                ? "MOD"
-                : user.role === "MOD"
+                ? "MODERATOR"
+                : user.role === "MODERATOR"
                 ? "USER"
                 : "USER",
           },
