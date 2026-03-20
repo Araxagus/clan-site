@@ -10,7 +10,7 @@ export async function POST(req: Request, context: any) {
     return NextResponse.json({ error: "Brak dostępu" }, { status: 403 });
   }
 
-  // ✅ WAŻNE: await params
+  // ✅ Next.js 15 params
   const { params } = context;
   const { id } = await params;
 
@@ -47,8 +47,8 @@ export async function POST(req: Request, context: any) {
           data: {
             role:
               user.role === "USER"
-                ? "MOD"
-                : user.role === "MOD"
+                ? "MODERATOR"
+                : user.role === "MODERATOR"
                 ? "ADMIN"
                 : "ADMIN",
           },
@@ -61,8 +61,8 @@ export async function POST(req: Request, context: any) {
           data: {
             role:
               user.role === "ADMIN"
-                ? "MOD"
-                : user.role === "MOD"
+                ? "MODERATOR"
+                : user.role === "MODERATOR"
                 ? "USER"
                 : "USER",
           },
