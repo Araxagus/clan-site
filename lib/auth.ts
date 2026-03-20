@@ -1,15 +1,15 @@
-import NextAuth from "next-auth";
-import Discord from "next-auth/providers/discord";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import DiscordProvider from "next-auth/providers/discord";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
 
   providers: [
-    Discord({
+    DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       authorization: {
@@ -21,7 +21,7 @@ export const authOptions = {
   ],
 
   session: {
-    strategy: "jwt" as const,
+    strategy: "jwt",
   },
 
   callbacks: {
@@ -29,13 +29,7 @@ export const authOptions = {
       return true;
     },
 
-    async jwt({
-      token,
-      user,
-    }: {
-      token: JWT;
-      user?: User;
-    }) {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user?.email) {
         let dbUser = await prisma.user.findUnique({
           where: { email: user.email },
@@ -56,26 +50,20 @@ export const authOptions = {
             });
           }
 
-          token.id = dbUser.id;
-          token.role = dbUser.role;
-          token.isApproved = dbUser.isApproved;
+          (token as any).id = dbUser.id;
+          (token as any).role = dbUser.role;
+          (token as any).isApproved = dbUser.isApproved;
         }
       }
 
       return token;
     },
 
-    async session({
-      session,
-      token,
-    }: {
-      session: Session;
-      token: JWT;
-    }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.isApproved = token.isApproved as boolean;
+        (session.user as any).id = (token as any).id ?? null;
+        (session.user as any).role = (token as any).role ?? null;
+        (session.user as any).isApproved = (token as any).isApproved ?? false;
       }
 
       return session;
