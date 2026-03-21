@@ -9,12 +9,12 @@ export default function HomepageClient({ session, games, streams }: any) {
   const [liveStreams, setLiveStreams] = useState<any[]>(streams || []);
   const [showOffline, setShowOffline] = useState(false);
 
-  // 🔥 AUTOMATYCZNA DOMENA (działa lokalnie i na Vercelu)
+  // ✅ POPRAWIONA DOMENA
   const DOMAIN =
     process.env.NEXT_PUBLIC_DOMAIN ||
     (typeof window !== "undefined"
       ? window.location.hostname
-      : "localhost");
+      : "hunters-nu.vercel.app");
 
   /* ================= REALTIME STATUS ================= */
   useEffect(() => {
@@ -203,10 +203,9 @@ export default function HomepageClient({ session, games, streams }: any) {
           </div>
         </div>
 
-        {/* STREAMS — JEDYNA SEKCJA */}
+        {/* STREAMS */}
         <div className="border-t border-gray-800 pt-12">
 
-          {/* LIVE HEADER */}
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-red-500">
               🔴 LIVE ({live.length})
@@ -226,7 +225,6 @@ export default function HomepageClient({ session, games, streams }: any) {
             </p>
           )}
 
-          {/* LIVE GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
             {live.map((s: any) => (
               <button
@@ -253,7 +251,6 @@ export default function HomepageClient({ session, games, streams }: any) {
             ))}
           </div>
 
-          {/* OFFLINE */}
           <button
             onClick={() => setShowOffline(!showOffline)}
             className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-300 hover:text-white transition"
@@ -290,11 +287,9 @@ export default function HomepageClient({ session, games, streams }: any) {
           )}
         </div>
 
-        {/* BIG PLAYER */}
         {activeStream && (
           <div className="mt-16 border border-gray-800 rounded-2xl p-6 bg-black/60 relative">
 
-            {/* CLOSE BUTTON */}
             <button
               onClick={() => setActiveStream(null)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
