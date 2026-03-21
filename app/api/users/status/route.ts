@@ -1,52 +1,59 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function mapStatus(status: string) {
-  switch (status) {
-    case "online":
-      return { label: "Online", color: "bg-green-500" };
-    case "idle":
-      return { label: "Idle", color: "bg-yellow-500" };
-    case "dnd":
-      return { label: "Nie przeszkadzać", color: "bg-red-500" };
-    default:
-      return { label: "Offline", color: "bg-gray-500" };
-  }
-}
-
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
       select: {
         id: true,
         name: true,
-        discordId: true,
-        discordStatus: true,
-        discordActivity: true,
-        discordActivityStart: true,
+        steamId: true,
+        activityStart: true, // <-- teraz istnieje
       },
     });
 
-    const formatted = users.map((u) => {
-      const status = u.discordStatus || "offline";
-      const statusMeta = mapStatus(status);
+    const results = [];
 
-      return {
-        id: u.id,
-        name: u.name,
-
-        discordStatus: status,
-        discordActivity: u.discordActivity,
-
-        statusMeta, // zawsze istnieje
-
-        isOnline: status !== "offline",
-
-        activityStart: u.discordActivityStart,
+    for (const user of users) {
+      let steamData = {
+        steamOnline: false,
+        steamGame: null,
+        steamAvatar: null,
+        steamName: null,
       };
-    });
 
-    return NextResponse.json(formatted);
+      if (user.steamId) {
+        try {
+          const res = await fetch(
+            `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${user.steamId}`,
+            { cache: "no-store" }
+          );
+
+          const data = await res.json();
+          const p = data.response.players?.[0];
+
+          if (p) {
+            steamData = {
+              steamOnline: p.personastate === 1,
+              steamGame: p.gameextrainfo || null,
+              steamAvatar: p.avatarfull,
+              steamName: p.personaname,
+            };
+          }
+        } catch (e) {
+          console.warn("Steam fetch failed for user", user.id);
+        }
+      }
+
+      results.push({
+        id: user.id,
+        name: user.name,
+        activityStart: user.activityStart,
+        ...steamData,
+      });
+    }
+
+    return NextResponse.json(results);
   } catch (e) {
     console.error(e);
     return NextResponse.json(

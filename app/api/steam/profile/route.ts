@@ -1,93 +1,39 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
-/* ================= XML PARSER ================= */
-function extract(tag: string, xml: string) {
-  const match = xml.match(new RegExp(`<${tag}>(.*?)</${tag}>`));
-  if (!match) return null;
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("user");
 
-  return match[1]
-    .replace("<![CDATA[", "")
-    .replace("]]>", "")
-    .trim();
-}
-
-/* ================= MAIN ================= */
-export async function GET() {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) {
+    return NextResponse.json({ error: "Missing user" });
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
   });
 
   if (!user?.steamId) {
-    return NextResponse.json({ error: "No Steam linked" }, { status: 400 });
+    return NextResponse.json({ error: "User has no Steam linked" });
   }
 
-  try {
-    /* ============================= */
-    /* 🔥 1. TRY STEAM API */
-    /* ============================= */
-    if (process.env.STEAM_API_KEY) {
-      const apiUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${user.steamId}`;
+  const res = await fetch(
+    `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${user.steamId}`,
+    { cache: "no-store" }
+  );
 
-      const res = await fetch(apiUrl, { cache: "no-store" });
+  const data = await res.json();
+  const player = data.response.players?.[0];
 
-      if (res.ok) {
-        const data = await res.json();
-        const profile = data.response.players?.[0];
-
-        if (profile) {
-          return NextResponse.json({
-            steamName: profile.personaname,
-            steamAvatar: profile.avatarfull,
-            steamProfile: profile.profileurl,
-            steamGame: profile.gameextrainfo || null,
-            steamOnline: profile.personastate !== 0,
-            source: "api",
-          });
-        }
-      }
-    }
-
-    /* ============================= */
-    /* 🟡 2. FALLBACK XML */
-    /* ============================= */
-    const xmlRes = await fetch(
-      `https://steamcommunity.com/profiles/${user.steamId}?xml=1`,
-      { cache: "no-store" }
-    );
-
-    const xml = await xmlRes.text();
-
-    if (!xml || xml.includes("<!DOCTYPE")) {
-      return NextResponse.json(
-        { error: "Steam profile private or invalid" },
-        { status: 400 }
-      );
-    }
-
-    const state = extract("onlineState", xml);
-
-    return NextResponse.json({
-      steamName: extract("steamID", xml),
-      steamAvatar: extract("avatarFull", xml),
-      steamProfile: extract("profileurl", xml),
-      steamGame: null,
-      steamOnline: state === "online" || state === "in-game",
-      source: "xml",
-    });
-
-  } catch (err) {
-    return NextResponse.json(
-      { error: "Steam fetch failed" },
-      { status: 500 }
-    );
+  if (!player) {
+    return NextResponse.json({ error: "Steam profile not found" });
   }
+
+  return NextResponse.json({
+    steamAvatar: player.avatarfull,
+    steamName: player.personaname,
+    steamGame: player.gameextrainfo || null,
+    steamOnline: player.personastate === 1,
+    steamProfile: player.profileurl,
+  });
 }

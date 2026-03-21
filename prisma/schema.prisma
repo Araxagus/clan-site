@@ -60,9 +60,7 @@ model User {
   // SESJE CZASU W GRACH
   gameSessions  GameSession[]
   lastSeen      DateTime?
-  discordStatus   String?  // online | idle | dnd | offline
-discordActivity String?  // np. "Playing CS2"
-discordActivityStart DateTime?
+ activityStart DateTime?
 }
 
 model Account {

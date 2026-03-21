@@ -36,22 +36,29 @@ export default function OnlineList() {
     return () => clearInterval(interval);
   }, []);
 
-  const onlineUsers = users.filter((u) => u.isOnline);
-  const offlineUsers = users.filter((u) => !u.isOnline);
+  // Steam decyduje o online/offline
+  const onlineUsers = users.filter((u) => u.steamOnline);
+  const offlineUsers = users.filter((u) => !u.steamOnline);
 
   function UserCard({ user }: any) {
-    // ✅ fallback zabezpieczenie
-    const statusMeta = user.statusMeta || {
-      label: "Offline",
-      color: "bg-gray-500",
-    };
-
     const elapsed = getElapsedTime(user.activityStart);
+
+    const statusLabel = user.steamOnline
+      ? user.steamGame
+        ? `Gra w ${user.steamGame}`
+        : "Online"
+      : "Offline";
+
+    const statusColor = user.steamOnline ? "bg-green-500" : "bg-gray-500";
+
+    const avatar =
+      user.steamAvatar ||
+      "https://placehold.co/100x100?text=User";
 
     return (
       <div
         className={`p-3 rounded-xl border transition ${
-          user.isOnline
+          user.steamOnline
             ? "border-green-500/40 bg-green-500/5"
             : "border-gray-800 bg-black/40 opacity-60"
         }`}
@@ -59,27 +66,19 @@ export default function OnlineList() {
         <div className="flex items-center gap-3">
 
           {/* Avatar */}
-          <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">
-            {user.name?.[0]}
-          </div>
+          <img
+            src={avatar}
+            className="w-10 h-10 rounded-full object-cover border border-gray-700"
+          />
 
           <div className="flex-1">
             <p className="text-sm font-semibold">{user.name}</p>
 
             {/* STATUS */}
             <div className="text-xs text-gray-400 flex items-center gap-2">
-              <span
-                className={`w-2 h-2 rounded-full ${statusMeta.color}`}
-              />
-              {statusMeta.label}
+              <span className={`w-2 h-2 rounded-full ${statusColor}`} />
+              {statusLabel}
             </div>
-
-            {/* ACTIVITY */}
-            {user.discordActivity && (
-              <div className="text-xs text-blue-400 mt-1">
-                {user.discordActivity}
-              </div>
-            )}
 
             {/* TIME */}
             {elapsed && (

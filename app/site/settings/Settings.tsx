@@ -22,7 +22,7 @@ export default function Settings({ initialUser, initialGames }: any) {
       setLoadingSteam(true);
 
       try {
-        const res = await fetch("/api/steam/profile");
+        const res = await fetch(`/api/steam/profile?user=${user.id}`);
 
         if (!res.ok) {
           console.warn("Steam request failed");
@@ -54,7 +54,7 @@ export default function Settings({ initialUser, initialGames }: any) {
     }
 
     loadSteam();
-  }, [user.steamId]);
+  }, [user.steamId, user.id]);
 
   /* ================= SAVE ================= */
   async function save() {

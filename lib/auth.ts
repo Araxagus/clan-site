@@ -25,10 +25,9 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    // ✅ SIGN IN – tylko jednorazowa logika przy logowaniu
+    /* ================= SIGN IN ================= */
     async signIn({ user, account }) {
       if (account?.provider !== "discord") return true;
-
       if (!user?.email) return true;
 
       const discordId = account.providerAccountId;
@@ -38,16 +37,15 @@ export const authOptions: NextAuthOptions = {
       });
 
       if (dbUser) {
+        // dopięcie discordId jeśli brak
         if (!dbUser.discordId) {
           await prisma.user.update({
             where: { id: dbUser.id },
-            data: {
-              discordId,
-            },
+            data: { discordId },
           });
         }
 
-        // 🔥 pierwszy user = admin
+        // pierwszy user = admin
         const count = await prisma.user.count();
         const isFirstUser = count === 1;
 
@@ -75,9 +73,8 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    // ✅ JWT – tylko lekkie przypisanie danych (bez ciężkich query)
+    /* ================= JWT ================= */
     async jwt({ token, user, account }) {
-      // tylko przy pierwszym logowaniu
       if (account && user?.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email },
@@ -94,7 +91,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
-    // ✅ SESSION – tylko mapowanie token → session (bez DB write!)
+    /* ================= SESSION ================= */
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         (session.user as any).id = (token as any).id ?? null;
@@ -114,7 +111,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   events: {
-    // ✅ user created (pierwsze utworzenie przez adapter)
+    /* ================= CREATE USER ================= */
     async createUser({ user }: { user: User }) {
       if (!user.email) return;
 
@@ -130,7 +127,7 @@ export const authOptions: NextAuthOptions = {
       });
     },
 
-    // ⚠️ signOut – bez token (bezpieczniej)
+    /* ================= SIGN OUT ================= */
     async signOut({ session }) {
       const userId = (session?.user as any)?.id;
       if (!userId) return;
