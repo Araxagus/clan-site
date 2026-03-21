@@ -11,22 +11,51 @@ export async function GET(req: Request) {
           select: {
             id: true,
             name: true,
-            discordId: true,
-            discordStatus: true,
-            discordActivity: true,
+            steamId: true,
+            activityStart: true,
           },
         });
 
-        const formatted = users
-          .filter((u) => u.discordId)
-          .map((u) => ({
-            id: u.id,
-            name: u.name,
-            discordStatus: u.discordStatus || "offline",
-            discordActivity: u.discordActivity || null,
-            isOnline:
-              u.discordStatus && u.discordStatus !== "offline",
-          }));
+        const formatted = [];
+
+        for (const user of users) {
+          let steamData = {
+            steamOnline: false,
+            steamGame: null,
+            steamAvatar: null,
+            steamName: null,
+          };
+
+          if (user.steamId) {
+            try {
+              const res = await fetch(
+                `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${user.steamId}`,
+                { cache: "no-store" }
+              );
+
+              const data = await res.json();
+              const p = data.response.players?.[0];
+
+              if (p) {
+                steamData = {
+                  steamOnline: p.personastate === 1,
+                  steamGame: p.gameextrainfo || null,
+                  steamAvatar: p.avatarfull,
+                  steamName: p.personaname,
+                };
+              }
+            } catch (e) {
+              console.warn("Steam fetch failed for user", user.id);
+            }
+          }
+
+          formatted.push({
+            id: user.id,
+            name: user.name,
+            activityStart: user.activityStart,
+            ...steamData,
+          });
+        }
 
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify(formatted)}\n\n`)
@@ -36,7 +65,7 @@ export async function GET(req: Request) {
       // pierwsze wysłanie
       await send();
 
-      // polling wewnętrzny (backend → SSE)
+      // polling co 5s
       const interval = setInterval(send, 5000);
 
       // cleanup

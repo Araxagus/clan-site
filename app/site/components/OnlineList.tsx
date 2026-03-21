@@ -74,18 +74,15 @@ export default function OnlineList() {
           <div className="flex-1">
             <p className="text-sm font-semibold">{user.name}</p>
 
-            {/* STATUS */}
+            {/* STATUS + SESSION TIME */}
             <div className="text-xs text-gray-400 flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${statusColor}`} />
               {statusLabel}
-            </div>
 
-            {/* TIME */}
-            {elapsed && (
-              <div className="text-xs text-gray-500 mt-1">
-                ⏱ {elapsed}
-              </div>
-            )}
+              {elapsed && user.steamOnline && (
+                <span className="text-gray-500">• {elapsed}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
