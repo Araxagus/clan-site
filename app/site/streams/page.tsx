@@ -15,7 +15,9 @@ export default function ClanStreamsPage() {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [activeStream, setActiveStream] = useState<Stream | null>(null);
 
-  const DOMAIN = "localhost"; // 🔥 zmień na produkcji
+  // ✅ dynamic domain for Twitch embed
+  const DOMAIN =
+    typeof window !== "undefined" ? window.location.hostname : "localhost";
 
   /* ================= LOAD + LIVE CHECK ================= */
   useEffect(() => {
@@ -127,14 +129,12 @@ export default function ClanStreamsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-10 max-w-6xl mx-auto">
-
       <h1 className="text-3xl font-bold mb-10 uppercase tracking-widest">
         Streamy klanowe
       </h1>
 
       {/* GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-
         {streams.map((s) => {
           const isActive = activeStream?.id === s.id;
 
@@ -186,7 +186,6 @@ export default function ClanStreamsPage() {
             </div>
           );
         })}
-
       </div>
 
       {/* PLAYER */}

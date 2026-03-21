@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+export async function GET(req: Request) {
+  const host = req.headers.get("host");
+  const protocol =
+    process.env.NODE_ENV === "production" ? "https" : "http";
+
+  const baseUrl = `${protocol}://${host}`;
+
   const returnUrl = `${baseUrl}/api/steam/callback`;
 
   const steamOpenIdUrl =
