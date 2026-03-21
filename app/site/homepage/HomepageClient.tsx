@@ -9,7 +9,12 @@ export default function HomepageClient({ session, games, streams }: any) {
   const [liveStreams, setLiveStreams] = useState<any[]>(streams || []);
   const [showOffline, setShowOffline] = useState(false);
 
-  const DOMAIN = "localhost"; // 🔥 zmień na produkcji
+  // 🔥 AUTOMATYCZNA DOMENA (działa lokalnie i na Vercelu)
+  const DOMAIN =
+    process.env.NEXT_PUBLIC_DOMAIN ||
+    (typeof window !== "undefined"
+      ? window.location.hostname
+      : "localhost");
 
   /* ================= REALTIME STATUS ================= */
   useEffect(() => {
@@ -115,7 +120,7 @@ export default function HomepageClient({ session, games, streams }: any) {
         <iframe
           key={stream.id}
           src={`https://player.twitch.tv/?channel=${channel}&parent=${DOMAIN}&autoplay=true&muted=false`}
-          className="w-full h-125 rounded-xl"
+          className="w-full h-[500px] rounded-xl"
           allowFullScreen
         />
       );
@@ -128,7 +133,7 @@ export default function HomepageClient({ session, games, streams }: any) {
       return (
         <iframe
           key={stream.id}
-          className="w-full h-125 rounded-xl"
+          className="w-full h-[500px] rounded-xl"
           src={`https://www.youtube.com/embed/${id}?autoplay=1`}
           allowFullScreen
         />
