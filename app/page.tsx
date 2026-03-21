@@ -29,7 +29,6 @@ export default function HomePage() {
       {/* KAFELKI */}
       <div className="flex h-full w-full overflow-hidden">
         {games.map((game) => {
-          // JEDEN KSZTAŁT DLA WSZYSTKICH
           const clip = "polygon(5% 0, 100% 0, 95% 100%, 0% 100%)";
 
           return (
@@ -44,7 +43,7 @@ export default function HomePage() {
                 className="absolute inset-0 overflow-hidden bg-neutral-950"
                 style={{ clipPath: clip }}
               >
-                {/* OBRAZ — TEN SAM ROZMIAR W KAŻDYM KAFELKU */}
+                {/* OBRAZ */}
                 <img
                   src={game.image}
                   alt={game.name}
@@ -98,6 +97,14 @@ export default function HomePage() {
             className="text-neutral-400 hover:text-white transition"
           >
             LOGIN
+          </Link>
+
+          <Link
+            href="https://discord.gg/NHU78XCAeg"
+            className="text-neutral-400 hover:text-white transition"
+            target="_blank"
+          >
+            DOŁĄCZ
           </Link>
 
           <Link
