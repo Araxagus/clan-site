@@ -3,7 +3,6 @@
 
 generator client {
   provider      = "prisma-client-js"
-  
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -37,7 +36,7 @@ model User {
   role          Role     @default(USER)
 
   // 🔥 APPROVAL SYSTEM
-  status        String   @default("pending") // pending | approved | rejected
+  status        String   @default("pending") // pending | approved | rejected | banned
   isApproved    Boolean  @default(false)
 
   // STREAMY
@@ -50,8 +49,11 @@ model User {
   isLive        Boolean  @default(false)
   livePlatform  String?
 
-  // GRY
-  games         Game[]
+  // GRY (many-to-many)
+  games         Game[]   @relation("UserGames")
+
+  // SESJE CZASU W GRACH
+  gameSessions  GameSession[]
 }
 
 model Account {
@@ -90,10 +92,30 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// 🔥 GRA – wiele userów, obrazek, timery
 model Game {
-  id     String @id @default(cuid())
-  name   String
-  userId String
+  id        String         @id @default(cuid())
+  name      String
+  image     String?        // URL tła / bannera
+  players   User[]         @relation("UserGames")
+  sessions  GameSession[]  // sesje czasu gry
+}
+
+// 🔥 SESJA CZASU W GRZE (do liczników)
+model GameSession {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+
+  // Możesz też trzymać zliczony czas w sekundach/minutach
+  totalSeconds Int?   // opcjonalnie, jeśli chcesz preliczyć
 
   user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@index([userId])
+  @@index([gameId])
 }

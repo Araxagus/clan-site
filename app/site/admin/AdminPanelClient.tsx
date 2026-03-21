@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import AddGame from "./AddGame";
+import GamesList from "./GamesList";
 
+/* ===== HELPERS ===== */
+function maskEmail(email: string | null) {
+  if (!email) return "brak";
+  const [name, domain] = email.split("@");
+  return name.slice(0, 4) + "****@" + domain;
+}
+
+/* ===== TYPES ===== */
 interface UserWithStatus {
   id: string;
   name: string | null;
@@ -13,6 +23,14 @@ interface UserWithStatus {
   createdAt: string;
 }
 
+interface Game {
+  id: string;
+  name: string;
+  image?: string;
+  playerCount?: number;
+}
+
+/* ===== MODAL ===== */
 function ConfirmModal({ open, title, message, onConfirm, onClose }: any) {
   if (!open) return null;
 
@@ -36,6 +54,7 @@ function ConfirmModal({ open, title, message, onConfirm, onClose }: any) {
   );
 }
 
+/* ===== BUTTON ===== */
 function AdminButton({ label, color, onClick }: any) {
   const colors: any = {
     green: "bg-green-600 hover:bg-green-700",
@@ -55,6 +74,7 @@ function AdminButton({ label, color, onClick }: any) {
   );
 }
 
+/* ===== USER CARD ===== */
 function AdminUserCard({ user, refresh }: any) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState("");
@@ -62,7 +82,7 @@ function AdminUserCard({ user, refresh }: any) {
   async function handleAction(action: string) {
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: "POST",
-      credentials: "include", // 🔥 KLUCZOWE
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
@@ -70,7 +90,6 @@ function AdminUserCard({ user, refresh }: any) {
     const data = await res.json();
 
     if (!res.ok) {
-      console.error(data);
       alert(data.error || "Error");
       return;
     }
@@ -90,7 +109,7 @@ function AdminUserCard({ user, refresh }: any) {
       <div className="flex justify-between">
         <div>
           <p className="font-semibold">{user.name}</p>
-          <p className="text-gray-400 text-sm">{user.email}</p>
+          <p className="text-gray-400 text-sm">{maskEmail(user.email)}</p>
           <p className={`text-${color}-400 text-xs mt-1`}>
             {user.role} • {user.status}
           </p>
@@ -138,6 +157,7 @@ function AdminUserCard({ user, refresh }: any) {
   );
 }
 
+/* ===== USER SECTION ===== */
 function AdminSection({ title, users, refresh }: any) {
   return (
     <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-6">
@@ -152,20 +172,28 @@ function AdminSection({ title, users, refresh }: any) {
   );
 }
 
-export default function AdminPanelClient({ users }: any) {
+/* ===== MAIN PANEL ===== */
+export default function AdminPanelClient({ users, games }: any) {
   const [data, setData] = useState<UserWithStatus[]>(users);
+  const [gameList, setGameList] = useState<Game[]>(games);
 
-  const refresh = async () => {
-    const res = await fetch("/api/admin/users", {
-      credentials: "include",
-    });
-
+  /* === REFRESH USERS === */
+  const refreshUsers = async () => {
+    const res = await fetch("/api/admin/users", { credentials: "include" });
     const newData = await res.json();
     setData(newData);
   };
 
+  /* === REFRESH GAMES === */
+  const refreshGames = async () => {
+    const res = await fetch("/api/games");
+    const newGames = await res.json();
+    setGameList(newGames);
+  };
+
   useEffect(() => {
-    refresh();
+    refreshUsers();
+    refreshGames();
   }, []);
 
   const pending = data.filter((u) => !u.isApproved);
@@ -173,7 +201,7 @@ export default function AdminPanelClient({ users }: any) {
   const banned = data.filter((u) => u.status === "banned");
 
   return (
-    <div className="min-h-screen bg-black text-white p-10">
+    <div className="min-h-screen bg-black text-white p-10 space-y-10">
       <header className="flex justify-between mb-10">
         <h1 className="text-3xl font-bold">🛡️ Panel Administratora</h1>
 
@@ -182,10 +210,17 @@ export default function AdminPanelClient({ users }: any) {
         </Link>
       </header>
 
+      {/* === USERS === */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-        <AdminSection title="⏳ Oczekujący" users={pending} refresh={refresh} />
-        <AdminSection title="🟢 Aktywni" users={active} refresh={refresh} />
-        <AdminSection title="⛔ Zbanowani" users={banned} refresh={refresh} />
+        <AdminSection title="⏳ Oczekujący" users={pending} refresh={refreshUsers} />
+        <AdminSection title="🟢 Aktywni" users={active} refresh={refreshUsers} />
+        <AdminSection title="⛔ Zbanowani" users={banned} refresh={refreshUsers} />
+      </div>
+
+      {/* === GAMES === */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+        <AddGame refresh={refreshGames} />
+        <GamesList games={gameList} refresh={refreshGames} />
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ export default async function Homepage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white flex justify-between">
+    <div className="min-h-screen bg-linear-to-b from-black via-gray-900 to-black text-white flex justify-between">
 
       {/* LEWA STRONA */}
       <div className="flex-1 max-w-7xl mx-auto p-10">
