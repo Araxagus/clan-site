@@ -11,7 +11,8 @@ export default function SiteLayout({
   const pathname = usePathname();
   const router = useRouter();
 
-  const isHome = pathname === "/";
+  // tu definiujemy, co jest homepage
+  const isHome = pathname === "/site/homepage";
 
   return (
     <div className="flex min-h-screen bg-black text-white">
