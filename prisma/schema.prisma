@@ -27,15 +27,16 @@ model User {
   accounts      Account[]
   sessions      Session[]
 
+  // DISCORD
   discordId     String?  @unique
   username      String?
 
   createdAt     DateTime @default(now())
 
-  // 🔥 ROLE SYSTEM
+  // ROLE SYSTEM
   role          Role     @default(USER)
 
-  // 🔥 APPROVAL SYSTEM
+  // APPROVAL SYSTEM
   status        String   @default("pending") // pending | approved | rejected | banned
   isApproved    Boolean  @default(false)
 
@@ -43,6 +44,10 @@ model User {
   twitchUrl     String?
   youtubeUrl    String?
   kickUrl       String?
+
+  // STEAM
+  steamId       String?   @unique
+  steamProfile  String?
 
   // STATUSY
   isOnline      Boolean  @default(false)
@@ -54,6 +59,10 @@ model User {
 
   // SESJE CZASU W GRACH
   gameSessions  GameSession[]
+  lastSeen      DateTime?
+  discordStatus   String?  // online | idle | dnd | offline
+discordActivity String?  // np. "Playing CS2"
+discordActivityStart DateTime?
 }
 
 model Account {

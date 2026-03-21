@@ -25,22 +25,59 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async signIn() {
+    async signIn({ account }) {
+      // tylko Discord
+      if (account?.provider === "discord") {
+        const discordId = account.providerAccountId;
+
+        // znajdź usera po email (NextAuth go tworzy)
+        const user = await prisma.user.findFirst({
+          where: { email: account.email! },
+        });
+
+        if (user) {
+          // 🔥 zapis discordId jeśli go nie ma
+          if (!user.discordId) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                discordId,
+              },
+            });
+          }
+        }
+      }
+
       return true;
     },
 
-    async jwt({ token, user }: { token: JWT; user?: User }) {
-      if (user?.email) {
-        let dbUser = await prisma.user.findUnique({
-          where: { email: user.email },
+    async jwt({ token, user, account }: any) {
+      // 🔥 pierwszy login
+      if (account?.provider === "discord") {
+        const discordId = account.providerAccountId;
+        (token as any).discordId = discordId;
+
+        const dbUser = await prisma.user.findFirst({
+          where: { email: user?.email || undefined },
         });
 
         if (dbUser) {
+          // 🔥 jeśli brak discordId w DB → uzupełnij
+          if (!dbUser.discordId) {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: {
+                discordId,
+              },
+            });
+          }
+
+          // 🔥 pierwszy admin
           const count = await prisma.user.count();
           const isFirstUser = count === 1;
 
           if (isFirstUser && dbUser.role !== "ADMIN") {
-            dbUser = await prisma.user.update({
+            await prisma.user.update({
               where: { id: dbUser.id },
               data: {
                 role: "ADMIN",
@@ -49,6 +86,14 @@ export const authOptions: NextAuthOptions = {
               },
             });
           }
+
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              lastSeen: new Date(),
+              isOnline: true,
+            },
+          });
 
           (token as any).id = dbUser.id;
           (token as any).role = dbUser.role;
@@ -61,9 +106,22 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
-        (session.user as any).id = (token as any).id ?? null;
+        const userId = (token as any).id;
+
+        (session.user as any).id = userId ?? null;
         (session.user as any).role = (token as any).role ?? null;
-        (session.user as any).isApproved = (token as any).isApproved ?? false;
+        (session.user as any).isApproved =
+          (token as any).isApproved ?? false;
+
+        if (userId) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              lastSeen: new Date(),
+              isOnline: true,
+            },
+          });
+        }
       }
 
       return session;
@@ -84,6 +142,20 @@ export const authOptions: NextAuthOptions = {
           role: "USER",
           isApproved: false,
           status: "pending",
+          lastSeen: new Date(),
+          isOnline: true,
+        },
+      });
+    },
+
+    async signOut({ token }) {
+      const userId = (token as any)?.id;
+      if (!userId) return;
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          isOnline: false,
         },
       });
     },
