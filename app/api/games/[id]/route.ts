@@ -35,7 +35,7 @@ export async function GET(
 }
 
 /**
- * DELETE — usuwanie gry (BEZ CRASHA)
+ * DELETE — usuwa tylko jedną grę
  */
 export async function DELETE(
   req: Request,
@@ -43,11 +43,25 @@ export async function DELETE(
 ) {
   const { id } = params;
 
-  await prisma.game.deleteMany({
-    where: { id },
-  });
+  if (!id) {
+    return NextResponse.json(
+      { error: "Invalid ID" },
+      { status: 400 }
+    );
+  }
 
-  return NextResponse.json({ success: true });
+  try {
+    await prisma.game.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Game not found" },
+      { status: 404 }
+    );
+  }
 }
 
 /**

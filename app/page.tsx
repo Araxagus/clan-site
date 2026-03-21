@@ -61,7 +61,7 @@ export default function HomePage() {
                 />
 
                 {/* GRADIENT */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black/70 pointer-events-none" />
 
                 {/* RAMKA */}
                 <div className="absolute inset-0 border border-white/10 group-hover:border-white/20 transition pointer-events-none" />
