@@ -25,103 +25,84 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async signIn({ account }) {
-      // tylko Discord
-      if (account?.provider === "discord") {
-        const discordId = account.providerAccountId;
+    // ✅ SIGN IN – tylko jednorazowa logika przy logowaniu
+    async signIn({ user, account }) {
+      if (account?.provider !== "discord") return true;
 
-        // znajdź usera po email (NextAuth go tworzy)
-        const user = await prisma.user.findFirst({
-          where: { email: account.email! },
-        });
+      if (!user?.email) return true;
 
-        if (user) {
-          // 🔥 zapis discordId jeśli go nie ma
-          if (!user.discordId) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                discordId,
-              },
-            });
-          }
+      const discordId = account.providerAccountId;
+
+      const dbUser = await prisma.user.findUnique({
+        where: { email: user.email },
+      });
+
+      if (dbUser) {
+        if (!dbUser.discordId) {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              discordId,
+            },
+          });
         }
+
+        // 🔥 pierwszy user = admin
+        const count = await prisma.user.count();
+        const isFirstUser = count === 1;
+
+        if (isFirstUser && dbUser.role !== "ADMIN") {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              role: "ADMIN",
+              isApproved: true,
+              status: "active",
+            },
+          });
+        }
+
+        // update online status
+        await prisma.user.update({
+          where: { id: dbUser.id },
+          data: {
+            lastSeen: new Date(),
+            isOnline: true,
+          },
+        });
       }
 
       return true;
     },
 
-    async jwt({ token, user, account }: any) {
-      // 🔥 pierwszy login
-      if (account?.provider === "discord") {
-        const discordId = account.providerAccountId;
-        (token as any).discordId = discordId;
-
-        const dbUser = await prisma.user.findFirst({
-          where: { email: user?.email || undefined },
+    // ✅ JWT – tylko lekkie przypisanie danych (bez ciężkich query)
+    async jwt({ token, user, account }) {
+      // tylko przy pierwszym logowaniu
+      if (account && user?.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
         });
 
         if (dbUser) {
-          // 🔥 jeśli brak discordId w DB → uzupełnij
-          if (!dbUser.discordId) {
-            await prisma.user.update({
-              where: { id: dbUser.id },
-              data: {
-                discordId,
-              },
-            });
-          }
-
-          // 🔥 pierwszy admin
-          const count = await prisma.user.count();
-          const isFirstUser = count === 1;
-
-          if (isFirstUser && dbUser.role !== "ADMIN") {
-            await prisma.user.update({
-              where: { id: dbUser.id },
-              data: {
-                role: "ADMIN",
-                isApproved: true,
-                status: "active",
-              },
-            });
-          }
-
-          await prisma.user.update({
-            where: { id: dbUser.id },
-            data: {
-              lastSeen: new Date(),
-              isOnline: true,
-            },
-          });
-
           (token as any).id = dbUser.id;
           (token as any).role = dbUser.role;
           (token as any).isApproved = dbUser.isApproved;
+          (token as any).discordId = dbUser.discordId;
         }
       }
 
       return token;
     },
 
+    // ✅ SESSION – tylko mapowanie token → session (bez DB write!)
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
-        const userId = (token as any).id;
-
-        (session.user as any).id = userId ?? null;
+        (session.user as any).id = (token as any).id ?? null;
         (session.user as any).role = (token as any).role ?? null;
         (session.user as any).isApproved =
           (token as any).isApproved ?? false;
-
-        if (userId) {
-          await prisma.user.update({
-            where: { id: userId },
-            data: {
-              lastSeen: new Date(),
-              isOnline: true,
-            },
-          });
-        }
+        (session.user as any).discordId =
+          (token as any).discordId ?? null;
       }
 
       return session;
@@ -133,6 +114,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   events: {
+    // ✅ user created (pierwsze utworzenie przez adapter)
     async createUser({ user }: { user: User }) {
       if (!user.email) return;
 
@@ -148,8 +130,9 @@ export const authOptions: NextAuthOptions = {
       });
     },
 
-    async signOut({ token }) {
-      const userId = (token as any)?.id;
+    // ⚠️ signOut – bez token (bezpieczniej)
+    async signOut({ session }) {
+      const userId = (session?.user as any)?.id;
       if (!userId) return;
 
       await prisma.user.update({
