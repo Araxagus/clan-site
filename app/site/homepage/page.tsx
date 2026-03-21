@@ -13,8 +13,9 @@ export default async function Homepage() {
     );
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
 
   const games = await fetch(`${baseUrl}/api/games/active`, {
     cache: "no-store",
