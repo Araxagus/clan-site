@@ -99,13 +99,7 @@ export default function HomePage() {
             LOGIN
           </Link>
 
-          <Link
-            href="https://discord.gg/NHU78XCAeg"
-            className="text-neutral-400 hover:text-white transition"
-            target="_blank"
-          >
-            DOŁĄCZ
-          </Link>
+         
 
           <Link
             href="/site/apply"
