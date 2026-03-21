@@ -1,6 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import HomepageClient from "@/app/site/homepage/HomepageClient";
+import { getActiveGames } from "@/lib/getActiveGames";
+import { getStreams } from "@/lib/getStreams";
 
 export default async function Homepage() {
   const session = await getServerSession(authOptions);
@@ -13,17 +15,8 @@ export default async function Homepage() {
     );
   }
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
-
-  const games = await fetch(`${baseUrl}/api/games/active`, {
-    cache: "no-store",
-  }).then((r) => r.json());
-
-  const streams = await fetch(`${baseUrl}/api/streams/clan`, {
-    cache: "no-store",
-  }).then((r) => r.json());
+  const games = await getActiveGames();
+  const streams = await getStreams();
 
   return (
     <HomepageClient
