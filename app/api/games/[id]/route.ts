@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 /**
  * GET — pobranie jednej gry
  */
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
 
   const game = await prisma.game.findUnique({
     where: { id },
@@ -38,10 +38,10 @@ export async function GET(
  * DELETE — usuwa tylko jedną grę
  */
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json(
@@ -56,7 +56,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Game not found" },
       { status: 404 }
@@ -68,10 +68,10 @@ export async function DELETE(
  * PATCH — edycja gry
  */
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await context.params;
   const body = await req.json();
 
   const game = await prisma.game.findUnique({
