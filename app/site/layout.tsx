@@ -1,8 +1,7 @@
 "use client";
 
 import OnlineList from "@/app/site/components/OnlineList";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function SiteLayout({
   children,
@@ -10,6 +9,8 @@ export default function SiteLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+
   const isHome = pathname === "/";
 
   return (
@@ -20,8 +21,8 @@ export default function SiteLayout({
 
         {/* POWRÓT — widoczny na każdej stronie poza homepage */}
         {!isHome && (
-          <Link
-            href="/"
+          <button
+            onClick={() => router.back()}
             className="
               absolute top-4 left-4 z-20
               px-4 py-2
@@ -33,7 +34,7 @@ export default function SiteLayout({
             "
           >
             ← POWRÓT
-          </Link>
+          </button>
         )}
 
         {children}
