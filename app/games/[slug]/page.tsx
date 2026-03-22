@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import GameClient from "./GameClient";
 
@@ -19,6 +21,5 @@ export default async function GameSlugPage({ params }: PageProps) {
     return <div className="text-white p-10">Gra nie istnieje.</div>;
   }
 
-  // 👇 KLUCZOWA LINIA — rzutowanie na typ klienta
   return <GameClient game={game as any} />;
 }
