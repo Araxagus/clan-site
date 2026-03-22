@@ -3,13 +3,11 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import GameClient from "./GameClient";
 
-interface PageProps {
-  params: {
-    slug?: string;
-  };
-}
-
-export default async function GameSlugPage({ params }: PageProps) {
+export default async function GameSlugPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   if (!params?.slug) {
     return <div className="text-white p-10">Brak sluga w URL</div>;
   }
