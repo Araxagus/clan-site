@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import AddGame from "./AddGame";
-import GamesList from "./GamesList";
 
 /* ===== HELPERS ===== */
 function maskEmail(email: string | null) {
@@ -26,32 +24,8 @@ interface UserWithStatus {
 interface Game {
   id: string;
   name: string;
+  slug: string;
   image?: string;
-  playerCount?: number;
-}
-
-/* ===== MODAL ===== */
-function ConfirmModal({ open, title, message, onConfirm, onClose }: any) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-gray-900 border border-gray-700 p-6 rounded-xl w-80">
-        <h3 className="text-xl font-bold mb-2">{title}</h3>
-        <p className="text-gray-400 mb-6">{message}</p>
-
-        <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-700 rounded-lg">
-            Anuluj
-          </button>
-
-          <button onClick={onConfirm} className="px-4 py-2 bg-red-600 rounded-lg">
-            Potwierdź
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /* ===== BUTTON ===== */
@@ -145,14 +119,6 @@ function AdminUserCard({ user, refresh }: any) {
           />
         </div>
       </div>
-
-      <ConfirmModal
-        open={modalOpen}
-        title="Usuń użytkownika"
-        message={`Czy na pewno chcesz usunąć ${user.name}?`}
-        onClose={() => setModalOpen(false)}
-        onConfirm={() => handleAction(modalAction)}
-      />
     </div>
   );
 }
@@ -186,7 +152,7 @@ export default function AdminPanelClient({ users, games }: any) {
 
   /* === REFRESH GAMES === */
   const refreshGames = async () => {
-    const res = await fetch("/api/games");
+    const res = await fetch("/api/admin/games");
     const newGames = await res.json();
     setGameList(newGames);
   };
@@ -199,6 +165,45 @@ export default function AdminPanelClient({ users, games }: any) {
   const pending = data.filter((u) => !u.isApproved);
   const active = data.filter((u) => u.isApproved && u.status === "active");
   const banned = data.filter((u) => u.status === "banned");
+
+  /* === ADD GAME === */
+  const [newName, setNewName] = useState("");
+  const [newSlug, setNewSlug] = useState("");
+  const [newImage, setNewImage] = useState("");
+
+  async function addGame() {
+    if (!newName || !newSlug) return alert("Nazwa i slug są wymagane");
+
+    const res = await fetch("/api/admin/games", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newName,
+        slug: newSlug,
+        image: newImage,
+      }),
+    });
+
+    if (!res.ok) return alert("Błąd podczas dodawania gry");
+
+    setNewName("");
+    setNewSlug("");
+    setNewImage("");
+
+    refreshGames();
+  }
+
+  async function deleteGame(id: string) {
+    if (!confirm("Na pewno chcesz usunąć tę grę?")) return;
+
+    const res = await fetch(`/api/admin/games/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) return alert("Błąd podczas usuwania gry");
+
+    refreshGames();
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-10 space-y-10">
@@ -218,9 +223,70 @@ export default function AdminPanelClient({ users, games }: any) {
       </div>
 
       {/* === GAMES === */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-        <AddGame refresh={refreshGames} />
-        <GamesList games={gameList} refresh={refreshGames} />
+      <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-6">
+        <h2 className="text-xl font-bold mb-4">🎮 Gry</h2>
+
+        {/* ADD GAME */}
+        <div className="flex gap-3 mb-6">
+          <input
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+            placeholder="Nazwa gry"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+
+          <input
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+            placeholder="Slug (np. quinfall)"
+            value={newSlug}
+            onChange={(e) => setNewSlug(e.target.value)}
+          />
+
+          <input
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
+            placeholder="URL obrazka (opcjonalnie)"
+            value={newImage}
+            onChange={(e) => setNewImage(e.target.value)}
+          />
+
+          <button
+            onClick={addGame}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-semibold"
+          >
+            Dodaj
+          </button>
+        </div>
+
+        {/* GAME LIST */}
+        <div className="space-y-4">
+          {gameList.map((game) => (
+            <div
+              key={game.id}
+              className="flex items-center justify-between bg-gray-800/60 p-4 rounded-xl border border-gray-700"
+            >
+              <div>
+                <p className="font-semibold">{game.name}</p>
+                <p className="text-gray-400 text-sm">/{game.slug}</p>
+              </div>
+
+              <div className="flex gap-3">
+                <a
+                  href={`/games/${game.slug}`}
+                  className="px-3 py-1 text-xs rounded-lg font-semibold bg-blue-600 hover:bg-blue-700"
+                >
+                  Otwórz
+                </a>
+
+                <button
+                  onClick={() => deleteGame(game.id)}
+                  className="px-3 py-1 text-xs rounded-lg font-semibold bg-red-600 hover:bg-red-700"
+                >
+                  Usuń
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

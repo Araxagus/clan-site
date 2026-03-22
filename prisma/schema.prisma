@@ -60,7 +60,7 @@ model User {
   // SESJE CZASU W GRACH
   gameSessions  GameSession[]
   lastSeen      DateTime?
- activityStart DateTime?
+  activityStart DateTime?
 }
 
 model Account {
@@ -99,13 +99,18 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// 🔥 GRA – wiele userów, obrazek, timery
+// 🔥 GRA – rozszerzona o slug i relację do stron
 model Game {
   id        String         @id @default(cuid())
   name      String
-  image     String?        // URL tła / bannera
+slug String @unique
+
+  image     String?        // banner / tło
+
   players   User[]         @relation("UserGames")
-  sessions  GameSession[]  // sesje czasu gry
+  sessions  GameSession[]
+
+  pages     GamePage[]     // ← dynamiczne podstrony gry
 }
 
 // 🔥 SESJA CZASU W GRZE (do liczników)
@@ -117,12 +122,36 @@ model GameSession {
   startedAt DateTime @default(now())
   endedAt   DateTime?
 
-  // Możesz też trzymać zliczony czas w sekundach/minutach
-  totalSeconds Int?   // opcjonalnie, jeśli chcesz preliczyć
+  totalSeconds Int?
 
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
 
   @@index([userId])
   @@index([gameId])
+}
+
+// 🔥 DYNAMICZNE PODSTRONY GRY
+model GamePage {
+  id          String   @id @default(cuid())
+  gameId      String
+
+  key         String   // np. "starter"
+  label       String   // np. "Pierwsze kroki"
+
+  category    String   // np. "Poradniki"
+  subcategory String   // np. "Start"
+
+  order       Int       @default(0)
+
+  content     Json?     // markdown / richtext / blocks
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, key])
+  @@index([category])
+  @@index([subcategory])
 }
