@@ -2,11 +2,46 @@
 
 import { useState } from "react";
 
-export default function GameClient({ game }) {
-  const [activeKey, setActiveKey] = useState(game.pages[0]?.key ?? null);
-  const activePage = game.pages.find((p) => p.key === activeKey);
+// Typ zgodny z Prisma.JsonValue, ale bez importu Prisma (bo to client component)
+type JSONValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JSONValue[]
+  | { [key: string]: JSONValue };
 
-  const groups = {};
+// Typ pojedynczej strony gry
+interface GamePage {
+  id: string;
+  key: string;
+  label: string;
+  category: string;
+  subcategory: string;
+  order: number;
+  content: JSONValue;
+}
+
+// Typ gry przekazywanej z serwera
+interface Game {
+  id: string;
+  name: string;
+  slug: string;
+  image: string | null;
+  pages: GamePage[];
+}
+
+export default function GameClient({ game }: { game: Game }) {
+  const [activeKey, setActiveKey] = useState<string | null>(
+    game.pages[0]?.key ?? null
+  );
+
+  const activePage =
+    game.pages.find((p) => p.key === activeKey) ?? null;
+
+  // Grupowanie stron
+  const groups: Record<string, Record<string, GamePage[]>> = {};
+
   game.pages.forEach((p) => {
     if (!groups[p.category]) groups[p.category] = {};
     if (!groups[p.category][p.subcategory])
@@ -82,12 +117,12 @@ export default function GameClient({ game }) {
   );
 }
 
-function renderContent(page) {
+function renderContent(page: GamePage | null) {
   if (!page) return "Brak treści.";
 
   if (typeof page.content === "string") return page.content;
 
-  if (typeof page.content === "object") {
+  if (typeof page.content === "object" && page.content !== null) {
     return (
       <pre className="text-xs bg-black/20 p-3 rounded border border-white/5">
         {JSON.stringify(page.content, null, 2)}

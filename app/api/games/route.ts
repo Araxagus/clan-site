@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import build from "next/dist/build";
 
 export async function GET() {
   const games = await prisma.game.findMany({
@@ -11,6 +12,7 @@ export async function GET() {
     games.map((g) => ({
       id: g.id,
       name: g.name,
+      slug: g.slug,
       image: g.image,
       playerCount: g.players.length,
     }))
@@ -25,10 +27,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing name" }, { status: 400 });
     }
 
+    // AUTO-GENEROWANIE SLUGA
+    const slug = name
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+
     const game = await prisma.game.create({
       data: {
         name,
-        image, // może być null, bo w modelu jest image?
+        slug,
+        image: image ?? null,
       },
     });
 

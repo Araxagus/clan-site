@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import GameClient from "./GameClient";
 
-export default async function GameSlugPage(props) {
-  const params = await props.params;
+interface PageProps {
+  params: {
+    slug: string;
+  };
+}
 
+export default async function GameSlugPage({ params }: PageProps) {
   const game = await prisma.game.findUnique({
     where: { slug: params.slug },
     include: {
@@ -15,5 +19,6 @@ export default async function GameSlugPage(props) {
     return <div className="text-white p-10">Gra nie istnieje.</div>;
   }
 
-  return <GameClient game={game} />;
+  // 👇 KLUCZOWA LINIA — rzutowanie na typ klienta
+  return <GameClient game={game as any} />;
 }

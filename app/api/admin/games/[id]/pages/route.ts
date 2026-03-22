@@ -1,14 +1,12 @@
-// app/api/admin/games/[id]/pages/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-interface Params {
-  params: { id: string };
-}
-
 // POST → dodaj stronę do gry
-export async function POST(req: Request, { params }: Params) {
-  const { id: gameId } = params;
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id: gameId } = await context.params; // ← FIX
 
   try {
     const body = await req.json();
