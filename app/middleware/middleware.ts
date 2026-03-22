@@ -3,27 +3,31 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // 🔓 Public routes (bez auth)
+  const publicPaths = ["/", "/api/auth", "/site/login"];
+
+  if (
+    publicPaths.some((path) => pathname.startsWith(path)) ||
+    pathname.startsWith("/games") // ✅ NIE blokujemy dynamicznych stron
+  ) {
+    return NextResponse.next();
+  }
+
+  // 🔐 Pobranie tokena
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  const { pathname } = req.nextUrl;
-
-  // 🔓 Public routes (nie blokujemy)
-  const publicPaths = ["/", "/api/auth", "/site/login"];
-
-  if (publicPaths.some((path) => pathname.startsWith(path))) {
-    return NextResponse.next();
-  }
-
-  // ❌ brak logowania
+  // ❌ brak logowania → redirect
   if (!token) {
     const url = new URL("/site/login", req.url);
     return NextResponse.redirect(url);
   }
 
-  // ❌ pending / not approved
+  // ❌ użytkownik niezaakceptowany
   if (!token.isApproved) {
     const url = new URL("/pending", req.url);
     return NextResponse.redirect(url);
@@ -40,6 +44,7 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+// Matcher (bez zmian – globalny, ale logika wewnątrz filtruje)
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
