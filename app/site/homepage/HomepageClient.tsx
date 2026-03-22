@@ -9,7 +9,6 @@ export default function HomepageClient({ session, games, streams }: any) {
   const [liveStreams, setLiveStreams] = useState<any[]>(streams || []);
   const [showOffline, setShowOffline] = useState(false);
 
-  // ✅ POPRAWIONA DOMENA
   const DOMAIN =
     process.env.NEXT_PUBLIC_DOMAIN ||
     (typeof window !== "undefined"
@@ -120,7 +119,7 @@ export default function HomepageClient({ session, games, streams }: any) {
         <iframe
           key={stream.id}
           src={`https://player.twitch.tv/?channel=${channel}&parent=${DOMAIN}&autoplay=true&muted=false`}
-          className="w-full h-[500px] rounded-xl"
+          className="w-full h-125 rounded-xl"
           allowFullScreen
         />
       );
@@ -133,7 +132,7 @@ export default function HomepageClient({ session, games, streams }: any) {
       return (
         <iframe
           key={stream.id}
-          className="w-full h-[500px] rounded-xl"
+          className="w-full h-125 rounded-xl"
           src={`https://www.youtube.com/embed/${id}?autoplay=1`}
           allowFullScreen
         />
@@ -179,27 +178,34 @@ export default function HomepageClient({ session, games, streams }: any) {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {games?.map((g: any) => (
-              <Link
-                key={g.id}
-                href={`/site/${g.id}`}
-                className="group relative rounded-xl overflow-hidden border border-gray-800 bg-black/20 hover:bg-black/40 transition"
-              >
-                <img
-                  src={g.image || "/images/default-game.png"}
-                  className="absolute inset-0 w-full h-full object-contain opacity-40 group-hover:opacity-60 transition"
-                />
+            {games?.map((g: any) => {
+              const slug = g.name
+                .toLowerCase()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-z0-9-]/g, "");
 
-                <div className="relative p-6 z-10">
-                  <h3 className="text-lg font-semibold uppercase group-hover:text-yellow-400">
-                    {g.name}
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    {g.playerCount} graczy
-                  </p>
-                </div>
-              </Link>
-            ))}
+              return (
+                <Link
+                  key={g.id}
+                  href={`/games/${slug}`}
+                  className="group relative rounded-xl overflow-hidden border border-gray-800 bg-black/20 hover:bg-black/40 transition"
+                >
+                  <img
+                    src={g.image || "/images/default-game.png"}
+                    className="absolute inset-0 w-full h-full object-contain opacity-40 group-hover:opacity-60 transition"
+                  />
+
+                  <div className="relative p-6 z-10">
+                    <h3 className="text-lg font-semibold uppercase group-hover:text-yellow-400">
+                      {g.name}
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      {g.playerCount} graczy
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
