@@ -6,26 +6,17 @@ import { prisma } from "@/lib/prisma";
 import GameClient from "./GameClient";
 
 export default async function GameSlugPage(props: any) {
-  const { params } = props;
+  const params = await props.params;
+  const slug = params?.slug;
 
-  console.log("RAW PARAMS:", params);
-
-  // ✅ WAŻNE: await params
-  const resolvedParams = await params;
-
-  console.log("RESOLVED PARAMS:", resolvedParams);
-  console.log("SLUG:", resolvedParams?.slug);
-
-  if (!resolvedParams?.slug) {
+  if (!slug) {
     return <div className="text-white p-10">Brak sluga w URL</div>;
   }
 
   const game = await prisma.game.findUnique({
-    where: { slug: resolvedParams.slug },
+    where: { slug },
     include: {
-      pages: {
-        orderBy: { order: "asc" },
-      },
+      pages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -33,5 +24,7 @@ export default async function GameSlugPage(props: any) {
     return <div className="text-white p-10">Gra nie istnieje.</div>;
   }
 
-  return <GameClient game={game as any} />;
+  const isAdmin = true; // podmień na realne sprawdzanie
+
+  return <GameClient game={game as any} isAdmin={isAdmin} />;
 }
