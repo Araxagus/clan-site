@@ -6,7 +6,7 @@ export default function HomePage() {
 
       {/* HERO */}
       <section className="relative h-[90vh] flex items-center justify-center text-center px-6">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/70 to-black" />
+        <div className="absolute inset-0 bg-linear-to-b from-black via-black/70 to-black" />
 
         <div className="relative z-10 max-w-3xl">
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">

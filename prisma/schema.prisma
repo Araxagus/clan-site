@@ -131,6 +131,52 @@ model GameSession {
   @@index([gameId])
 }
 
+model BossSchedule {
+  id          String   @id @default(cuid())
+
+  bossId      String
+  boss        Boss     @relation(fields: [bossId], references: [id], onDelete: Cascade)
+
+  channel     Int      // 1-4
+
+  dayOfWeek   Int      // 0-6 (0 = niedziela)
+  hour        Int
+  minute      Int
+
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  @@index([bossId, channel])
+  @@index([dayOfWeek, hour, minute])
+}
+
+model Boss {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  imageUrl    String?
+
+  channel     Int      @default(1)
+
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+
+  schedules   BossSchedule[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([channel])
+}
+model PushSubscription {
+  id          String @id @default(cuid())
+  endpoint    String @unique
+  p256dh      String
+  auth        String
+  createdAt   DateTime @default(now())
+}
+
 // 🔥 DYNAMICZNE PODSTRONY GRY
 model GamePage {
   id          String   @id @default(cuid())

@@ -53,7 +53,7 @@ function Modal({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-5 w-[420px] shadow-xl">
+      <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-5 w-105 shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-semibold text-neutral-200">
             {title}

@@ -13,7 +13,7 @@ export async function GET() {
   });
 
   return NextResponse.json(
-    games.map((g) => ({
+    games.map((g: typeof games[number]) => ({
       id: g.id,
       name: g.name,
       image: g.image,
